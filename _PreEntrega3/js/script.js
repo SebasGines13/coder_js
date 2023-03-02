@@ -97,7 +97,7 @@ function requestContinue( msj ){
 }
 
 function sum_points( accumulated, number ){
-    let attempts = number.get_attempt();
+    let attempts = number.attempts;
     if ( attempts <= 3 ){
         return accumulated += 3;
     } else if ( attempts <= 4){
@@ -108,44 +108,64 @@ function sum_points( accumulated, number ){
 
 
 // Helper function to calculate the score
-function calculate_score( game ){
-    let numbers = game.get_numbers();
+function calculate_score( numbers ){
     let points = numbers.reduce( sum_points, 0 );
     let score = new Score(numbers.length, points)
     return score.get_summary();
 }
 
-// Main function of the game
-function newGame(){
-    let game = new Game();
-    do {
-        let guess_number = new Number();
-        do {
-            number = requestNumber("Enter a integer number (0 to 9)");
-            guess_number.add_attempt();
-            if ( !guess_number.is_guessed(number)) {
-                if ( guess_number.is_lower(number) ) {
-                    alert("The lucky number is less than the one entered 🔽🔽🔽")
-                } else {
-                    alert("The lucky number is greater than the entered one 🔼🔼🔼")
-                }
-            } else {
-                alert("🏆🎉 Well done, you guessed the number "+ guess_number.get_number_to_guess() + " in " + guess_number.get_attempt() + " attempts " + "😁")
-                guess_number.set_guessed(true);
-            }        
-        } while (!guess_number.get_guessed()) 
-        game.add_number(guess_number); 
-    } while ( requestContinue("🎲 Do you want to keep playing? (S/N)").toUpperCase() == "S" )
-    alert("Thanks for playing 🎲 \n" + calculate_score(game))
+
+function show_toast( msg, duration ){
+    Toastify({
+        text: msg,
+        duration: duration,
+        newWindow: true,
+        close: true,
+        gravity: "top",
+        position: "right",
+        stopOnFocus: true, 
+        style: {
+          background: "linear-gradient(to right, #00b09b, #96c93d)",
+        },
+        onClick: function(){} 
+      }).showToast();
 }
 
-
+// Main function of the game
 document.getElementById("start_game").addEventListener("click", ()=>{
+    localStorage.clear();
+    let game = new Game();
+    let number_to_guess = new Number();
+    localStorage.setItem("game",JSON.stringify(game));
+    localStorage.setItem("number_to_guess",JSON.stringify(number_to_guess));
+    document.getElementById("start_game").style.display = "none";
     let numbers = document.getElementById("enter_number");
-    if( numbers.style.display != "none" ){
-        numbers.style.display = "none";
+    numbers.style.display = "block";
+});
+
+document.getElementById("btn_number").addEventListener("click", ()=>{
+    number_save = JSON.parse( localStorage.getItem("number_to_guess") );
+    number_save.attempts ++;
+    input_number = document.getElementById("input_number").value;
+    if ( number_save.number_to_guess == input_number ) {
+        number_save.guessed = true;
+        game = JSON.parse( localStorage.getItem("game") );
+        game.numbers.push(number_save)
+        show_toast("🏆🎉 Well done, you guessed the number " + 
+            number_save.number_to_guess + " in " + 
+            number_save.attempts + " attempts " + "😁" +
+            calculate_score(game.numbers), 5000)
+        localStorage.setItem("game",JSON.stringify(game));
+        localStorage.removeItem("number_to_guess");
+        document.getElementById("enter_number").style.display = "none";
+        document.getElementById("start_game").style.display = "block";
     } else {
-        numbers.style.display = "block";
+        if ( number_save.number_to_guess < input_number ) {
+            show_toast("The lucky number is less than " + input_number + " 🔽🔽🔽", 3000)
+        } else {
+            show_toast("The lucky number is greater than " + input_number + " 🔼🔼🔼", 3000)
+        } 
+        localStorage.setItem("number_to_guess",JSON.stringify(number_save)); 
     }
-})
+});
 
