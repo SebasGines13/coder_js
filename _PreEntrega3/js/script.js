@@ -115,10 +115,10 @@ function calculate_score( numbers ){
 }
 
 
-function show_toast( msg, duration ){
+function show_toast( msg ){
     Toastify({
         text: msg,
-        duration: duration,
+        duration: 5000,
         newWindow: true,
         close: true,
         gravity: "top",
@@ -154,18 +154,27 @@ document.getElementById("btn_number").addEventListener("click", ()=>{
         show_toast("🏆🎉 Well done, you guessed the number " + 
             number_save.number_to_guess + " in " + 
             number_save.attempts + " attempts " + "😁" +
-            calculate_score(game.numbers), 5000)
+            calculate_score(game.numbers))
         localStorage.setItem("game",JSON.stringify(game));
         localStorage.removeItem("number_to_guess");
         document.getElementById("enter_number").style.display = "none";
         document.getElementById("start_game").style.display = "block";
+        let list_item = document.querySelectorAll(".list_item");
+        for ( let item of list_item ){
+            item.parentNode.remove();
+        }
     } else {
         if ( number_save.number_to_guess < input_number ) {
-            show_toast("The lucky number is less than " + input_number + " 🔽🔽🔽", 3000)
+            msg_toast = "The lucky number is less than " + input_number + " 🔽🔽🔽";
         } else {
-            show_toast("The lucky number is greater than " + input_number + " 🔼🔼🔼", 3000)
+            msg_toast = "The lucky number is greater than " + input_number + " 🔼🔼🔼";
         } 
-        localStorage.setItem("number_to_guess",JSON.stringify(number_save)); 
+        show_toast(msg_toast)
+        localStorage.setItem("number_to_guess",JSON.stringify(number_save));
+        let list = document.getElementById("list");
+        let li = document.createElement("li");
+        li.innerHTML = `<span class="list_item">${msg_toast}</span>`;
+        list.append(li);
     }
 });
 
