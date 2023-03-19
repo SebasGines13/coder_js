@@ -12,6 +12,7 @@ class Game{
     get_numbers(){
         return this.numbers;
     }
+
 }
 
 class Number{
@@ -69,7 +70,7 @@ class Score{
     }
 
     get_summary(){
-        return "\n\nYour Stats in this game :)\nPoints: " + this.points;
+        return "\n\nYour Stats in this game :)\nNumbers Guessed: " + this.numbers + "\nPoints: " + this.points;
     }
 }
 
@@ -97,8 +98,8 @@ function requestContinue( msj ){
 
 function sum_points( accumulated, number ){
     let attempts = number.attempts;
-    if ( attempts <= 2 ){
-        return accumulated += 4;
+    if ( attempts <= 3 ){
+        return accumulated += 3;
     } else if ( attempts <= 4){
         return accumulated += 2;
     } 
@@ -109,15 +110,7 @@ function sum_points( accumulated, number ){
 // Helper function to calculate the score
 function calculate_score( numbers ){
     let points = numbers.reduce( sum_points, 0 );
-    let score = new Score(numbers.length, points);
-    let arr_user = JSON.parse(localStorage.getItem("arr_user"));
-    let current_user_login = localStorage.getItem("current_user_login");
-    let user_index = arr_user.findIndex( el => el.name == current_user_login );
-    if ( user_index !== -1 ){
-        arr_user[user_index].games ++;
-        arr_user[user_index].points += points;
-        localStorage.setItem("arr_user", JSON.stringify( arr_user ));
-    }
+    let score = new Score(numbers.length, points)
     return score.get_summary();
 }
 
@@ -125,7 +118,7 @@ function calculate_score( numbers ){
 function show_toast( msg ){
     Toastify({
         text: msg,
-        duration: 2500,
+        duration: 5000,
         newWindow: true,
         close: true,
         gravity: "top",
@@ -138,91 +131,9 @@ function show_toast( msg ){
       }).showToast();
 }
 
-
-function login_user(user_name, user_pass ){
-    let arr_user = localStorage.getItem("arr_user")
-    if (arr_user === "undefined" || arr_user === null) {
-        return false
-    } else {
-        arr_user = JSON.parse(arr_user);
-    }
-    for (let user of arr_user) {
-        if ( user.name == user_name && user.password == user_pass ){
-            return true;
-        } 
-    }
-    return false;
-}
-
-function new_user(username, password){
-    let arr_user = localStorage.getItem("arr_user")
-    if (arr_user === "undefined" || arr_user === null) {
-        arr_user = [];
-    } else {
-        arr_user = JSON.parse(arr_user);
-    }
-    let user = {name: username, password: password, games: 0, points: 0};
-    arr_user.push( user );
-    let arr_JSON = JSON.stringify( arr_user );
-    localStorage.setItem("arr_user", arr_JSON);
-    document.getElementById("current_user_login").innerHTML = `<p style="display: inline-block;"class="text-light">Player: ${username} | Games history: 0 | Points: 0</p>`
-}
-
-function current_user(){
-    let current_user_login = localStorage.getItem("current_user_login");
-    let arr_user = JSON.parse(localStorage.getItem("arr_user"))
-    let user_info = arr_user.find( el => el.name === current_user_login )
-    document.getElementById("current_user_login").innerHTML = `<p style="display: inline-block;"class="text-light">Player: ${user_info.name} | Games history: ${user_info.games} | Points: ${user_info.points}</p>`
-}
-
-Swal.fire({
-    title: 'Please login or register',
-    html: `<input type="text" id="login" class="swal2-input" placeholder="Username">
-    <input type="password" id="password" class="swal2-input" placeholder="Password">`,
-    confirmButtonText: 'Login',
-    showDenyButton: true,
-    denyButtonColor: '#3085d6',
-    denyButtonText: "Register",
-    focusConfirm: false,    
-    allowOutsideClick: false,
-    backdrop: `
-    rgba(0,0,0,1)
-    url("./img/dice.gif")
-    left top
-    no-repeat`,
-    preConfirm: () => {
-        const login = Swal.getPopup().querySelector('#login').value
-        const password = Swal.getPopup().querySelector('#password').value
-        if (!login || !password) {
-            Swal.showValidationMessage(`Please enter Username and Password`)
-        } else if (!login_user(login, password)){
-            Swal.showValidationMessage(`wrong user or password`)
-        }
-        return { login: login, password: password  }
-    },  
-    preDeny: () => {
-        const login = Swal.getPopup().querySelector('#login').value
-        const password = Swal.getPopup().querySelector('#password').value
-        if (!login || !password) {
-            Swal.showValidationMessage(`Please enter Username and Password`)
-        }
-        return { login: login, password: password  }
-    }
-  }).then((result) => {
-    localStorage.setItem("current_user_login", result.value.login)
-    Swal.fire(`
-      Welcome ${result.value.login}
-    `.trim())
-    if (!result.isConfirmed) {
-        new_user(result.value.login, result.value.password)
-    } else {
-        current_user()
-    }
-  })
-  
-
 // Main function of the game
 document.getElementById("start_game").addEventListener("click", ()=>{
+    localStorage.clear();
     let game = new Game();
     let number_to_guess = new Number();
     localStorage.setItem("game",JSON.stringify(game));
@@ -248,7 +159,6 @@ document.getElementById("btn_number").addEventListener("click", ()=>{
         localStorage.removeItem("number_to_guess");
         document.getElementById("enter_number").style.display = "none";
         document.getElementById("start_game").style.display = "block";
-        current_user()
         let list_item = document.querySelectorAll(".list_item");
         for ( let item of list_item ){
             item.parentNode.remove();
@@ -267,10 +177,4 @@ document.getElementById("btn_number").addEventListener("click", ()=>{
         list.append(li);
     }
 });
-
-fetch("https://api.coingecko.com/api/v3/coins/bitcoin")
-    .then( response => response.json() )
-    .then( data     => {
-        document.getElementById("btc_price").innerHTML = `<p style="display: inline-block;"class="text-light">${data.name} price: ${data.tickers[0].last} ${data.tickers[0].target}</p>`
-} )
 
